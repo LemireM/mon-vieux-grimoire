@@ -11,6 +11,7 @@ dotenv.config()
 
 app.use(cors())
 app.use(express.json())
+app.use('/static', express.static('static'));
 
 app.use('/api/books', book)
 app.use('/api/auth', auth)
