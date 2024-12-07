@@ -6,11 +6,11 @@ const {compressImage} = require('../utils/utils')
 const getAll = async (req, res) => {
     try {
         const books = await Book.find({}).exec()
-        res.json(books)   
+        res.json(books)
     } catch(err){
         res.status(500).json({message: "Erreur serveur"})
-    }    
-} 
+    }
+}
 
 const getBestRating = async (req, res) => {
     try {
@@ -21,7 +21,7 @@ const getBestRating = async (req, res) => {
     }
 }
 
-const getById = async (req, res) => {  
+const getById = async (req, res) => {
     try {
         const book = await Book.findOne({_id: req.params.id}).exec()
         if(!book){
@@ -43,10 +43,11 @@ const create = async (req, res) => {
 
         const book = new Book({
             ...bookData,
+            userId: req.userId,
             imageUrl: `http://${req.hostname}:${process.env.PORT}/static/resized/${fileDest}`,
             averageRating: 0,
             ratings: []
-        })  
+        })
         await book.save()
         res.status(201).json({message: 'OK'})
     } catch(err){
@@ -56,9 +57,9 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
     try {
-        const book = await Book.findOne({_id: req.params.id}).exec()       
+        const book = await Book.findOne({_id: req.params.id}).exec()
         if(!book){
-            res.status(404).end()    
+            res.status(404).end()
             return
         }
 
@@ -75,8 +76,8 @@ const update = async (req, res) => {
             const imageName = imageNameSplit[imageNameSplit.length - 1]
             const fileDest = await compressImage(req.file)
             try {
-                await fs.access(`./static/resized/${imageName}`)    
-                await fs.unlink(`./static/resized/${imageName}`)                
+                await fs.access(`./static/resized/${imageName}`)
+                await fs.unlink(`./static/resized/${imageName}`)
             } catch(err){
                 console.log("Le fichier n'existe pas")
             } finally {
@@ -99,9 +100,9 @@ const update = async (req, res) => {
 
 const deleteBook = async (req, res) => {
     try {
-        const book = await Book.findOne({_id: req.params.id}).exec()       
+        const book = await Book.findOne({_id: req.params.id}).exec()
         if(!book){
-            res.status(404).end()    
+            res.status(404).end()
             return
         }
 
@@ -112,7 +113,7 @@ const deleteBook = async (req, res) => {
 
         let imageNameSplit = book.imageUrl.split('/')
         const imageName = imageNameSplit[imageNameSplit.length - 1]
-        await fs.unlink(`./static/${imageName}`)
+        await fs.unlink(`./static/resized/${imageName}`)
         await Book.deleteOne({_id: req.params.id})
         res.status(204).end() // Jamais de contenu pour le code 204 propre à une suppression de ressource
     }catch(err){
@@ -123,16 +124,16 @@ const deleteBook = async (req, res) => {
 
 const addRating = async (req, res) => {
     try {
-        let book = await Book.findOne({_id: req.params.id}).exec()       
+        let book = await Book.findOne({_id: req.params.id}).exec()
         if(!book){
-            res.status(404).end()    
+            res.status(404).end()
             return
         }
-        const {userId, rating} = req.body        
+        const {userId, rating} = req.body
         /**
          * On doit vérifier que le userId de la requête correspond bien
          * au userId de l'authentification. Sinon, on pourrait envoyer des notes avec un utilisateur inconnu
-         */        
+         */
         if(userId !== req.userId){
             res.status(403).json({message: "L'utilsateur de la requête n'est pas autorisé à noter ce livre"})
             return
